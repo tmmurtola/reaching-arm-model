@@ -1,1 +1,0 @@
-# reaching-arm-model
