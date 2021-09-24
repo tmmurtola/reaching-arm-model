@@ -2,7 +2,7 @@
 reaching-arm-model
 *********
 
-This code package contains simple MuJoCo arm models and control code that executes a series of reaching movements towards targets in the workspace.
+This code package contains a simple MuJoCo arm model and control code that executes a series of reaching movements towards targets in the workspace.
 
 Preliminaries
 ============
@@ -11,7 +11,7 @@ Download and install `MuJoCo <http://www.mujoco.org/index.html/>`_ with active l
 The contents of this package:
 
 * simulate_reaches.cpp - main C++ file
-* tidyToolbox.h        - header file containing auxiliary and callback functions
+* reachingToolbox.h        - header file containing auxiliary and callback functions
 * mjcontrol.h          - header file defining control variable structure
 * human_arm_3dof.xml   - xml model file
 
@@ -35,7 +35,7 @@ Muscle force generation and activation dynamics functions can be varied by comme
 
 muscleGainFLV enables force-length-velocity properties for the muscles while muscleGainConst disables the FLV properties. 
 
-muscleActivation1stOrder and muscleActivation3rdOrder implement first and third order activation dynamics, respectively. To use instantaneous activation, change dyntype to "none" in the xml file with either mjcb_act_dyn, or none, specified in simulate_reaches.cpp. The parameters of the activation dynamics are defined in the xml models. Remember to alter them to match the chosen activation model.
+muscleActivation1stOrder and muscleActivation3rdOrder implement first and third order activation dynamics, respectively. To use instantaneous activation, change default dyntype to "none" in the xml file with either mjcb_act_dyn, or none, specified in simulate_reaches.cpp. The parameters of the activation dynamics are defined in the xml models. Remember to alter them to match the chosen activation model.
 
 Control parameters, including PD gains and prediction time (assumed delay) can be changed in the control structure definition file mjcontrol.h.
 
