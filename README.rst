@@ -35,7 +35,7 @@ Muscle force generation and activation dynamics functions can be varied by comme
 
 muscleGainFLV enables force-length-velocity properties for the muscles while muscleGainConst disables the FLV properties. 
 
-muscleActivation1stOrder and muscleActivation3rdOrder implement first and third order activation dynamics, respectively. To use instantaneous activation, change default dyntype to "none" in the xml file with either mjcb_act_dyn, or none, specified in simulate_reaches.cpp. The parameters of the activation dynamics are defined in the xml models. Remember to alter them to match the chosen activation model.
+muscleActivation1stOrder and muscleActivation3rdOrder implement first and third order activation dynamics, respectively. To use instantaneous activation, change default dyntype to "none" in the xml file with either mjcb_act_dyn, or none, specified in simulate_reaches.cpp. The parameters of the activation dynamics are defined in the xml model. Remember to alter them to match the chosen activation model.
 
 Control parameters, including PD gains and prediction time (assumed delay) can be changed in the control structure definition file mjcontrol.h.
 
