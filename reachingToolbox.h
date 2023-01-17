@@ -2,7 +2,7 @@
     REACHINGTOOLBOX.H defines auxiliary functions and custom 
     callbacks for SIMULATE_REACHES.CPP.
 
-    Copyright 2021 Tiina Murtola/Royal Veterinary College
+    Copyright 2022 Tiina Murtola/Royal Veterinary College
 
 ***************************************************************/
 
@@ -11,6 +11,12 @@
 #include <math.h>
 #include "LinAlg.h"
 #include <algorithm>
+// file input/output
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+#include <string>
+#include <vector>
 
 extern mjControl c;
 extern mjData* dpred;
@@ -154,6 +160,27 @@ mjtNum muscleGainConst(const mjModel* m, const mjData* d, int id)
     ForceGain = m->actuator_gainprm[id * 10];
 
     return ForceGain;
+}
+
+mjtNum muscleBias(const mjModel* m, const mjData* d, int id)
+{
+    /* Returns passive force from parallel elastic element.
+       Intended to use as a muscle bias callback in simulation pipeline. To use, set
+            mjcb_act_bias = muscleBias;
+       and check m->actuator_biasprm.
+    */
+
+    mjtNum ForceBias;
+    double delta_l_rel;
+
+    delta_l_rel = d->actuator_length[id] / m->actuator_user[id] - m->actuator_biasprm[id * 10 + 2];
+
+    if (delta_l_rel > 0)
+        ForceBias = m->actuator_biasprm[id * 10] * (exp(m->actuator_biasprm[id * 10 + 1] * delta_l_rel) - 1);
+    else
+        ForceBias = 0.0;
+
+    return ForceBias;
 }
 
 
@@ -338,6 +365,62 @@ void muscleControlTargetPD(const mjModel* m, mjData* d)
     }
 }
 
+void muscleControlTargetCompTorq(const mjModel* m, mjData* d)
+{
+    /*Computes input control signal for muscles based on the error between target and grip site
+    positions using the computed torque approach.
+    */
+
+    if (!c.update_control)
+    {
+        return;
+    }
+
+    computePDmagn(m, d);
+
+    if (c.use_predicted_data)
+        mj_mulM(m, dpred, c.computed_torque, c.PDmagn);
+    else
+        mj_mulM(m, d, c.computed_torque, c.PDmagn);
+    mju_addTo(c.computed_torque, d->qfrc_bias, m->nv);
+
+
+    double act_torque;
+    double max_torque;
+    int best_actuator;
+
+    mju_zero(d->ctrl, m->nu);
+
+    //printf("torques: ");
+    for (int qID = 0; qID < m->nv; qID++)
+    {
+        max_torque = 0.0;
+        for (int actID = 0; actID < m->nu; actID++)
+        {
+            if (c.use_predicted_data)
+                act_torque = d->actuator_moment[actID * m->nv + qID] * muscleGainFLV(m, dpred, actID);
+            else
+                act_torque = d->actuator_moment[actID * m->nv + qID] * muscleGainFLV(m, d, actID);
+
+            if (act_torque * c.computed_torque[qID] > 0.0 && abs(act_torque) > abs(max_torque)) // highest torque in right direction
+            {
+                best_actuator = actID;
+                max_torque = act_torque;
+            }
+        }
+
+        if (abs(max_torque) > 0)
+        {
+            d->ctrl[best_actuator] = abs(c.computed_torque[qID] / max_torque);
+            if (d->ctrl[best_actuator] > 1.0)
+                d->ctrl[best_actuator] = 1.0;
+
+        }
+
+    }
+
+}
+
 
 /* TASK CONTROL FUNCTIONS */
 
@@ -348,34 +431,92 @@ void setInitialPose(const mjModel* m, mjData* d, double initPose[])
     mj_forward(m, d);
 }
 
-bool nextTarget(mjModel* m, mjData* d, int trgid)
+void importTargets(std::ifstream& targetfile, std::vector<std::pair<double, double>>& targ_list)
 {
-    int grpid = mj_name2id(m, mjOBJ_SITE, "grip");
-    bool next_target_exists = 0;
-    double angle;
+    std::string line;
+    std::string::size_type sz;
+    std::string::size_type st;
+
+    int numberOfLines = 0;
+    int varInd = 0;
     double x_targ[2];
-
-    // next_targ has been incremented
-   if (c.next_targ < c.ntargs) // feasible targets run 0,...,ntargs-1
+    while (std::getline(targetfile, line))
     {
-        angle = 360.0 * c.next_targ / c.ntargs;
-        x_targ[0] = d->site_xpos[3 * grpid] + c.targ_dist * cos(angle / 180.0 * mjPI) - c.shoulder_pos[0];
-        x_targ[1] = d->site_xpos[3 * grpid + 1] + c.targ_dist * sin(angle / 180.0 * mjPI) - c.shoulder_pos[1];
-
-        m->site_pos[3 * trgid] = x_targ[0] + c.shoulder_pos[0];
-        m->site_pos[3 * trgid + 1] = x_targ[1] + c.shoulder_pos[1];
-
-        c.x_error_init[0] = m->site_pos[3 * trgid] - d->site_xpos[3 * grpid];
-        c.x_error_init[1] = m->site_pos[3 * trgid + 1] - d->site_xpos[3 * grpid + 1];
-        c.x_error_init[2] = 0.0;
-
-        next_target_exists = 1;
+        st = 0;
+        for (int varInd = 0; varInd < 2; varInd++)
+        {
+            x_targ[varInd] = std::stof(line.substr(st), &sz);
+            sz++; // correction due to separator ";\t"
+            st += sz;
+        }
+        targ_list.push_back(std::make_pair(x_targ[0], x_targ[1]));
+        ++numberOfLines;
     }
 
-    c.reach_time = 1.712 * pow(c.targ_dist, 0.333); // coefficient = K^1/6 * 60^1/3, K=0.007
+    std::cout << "Reading targets completed with " << numberOfLines << " lines of data.\n";
+    c.ntargs = numberOfLines;
+}
+
+//bool nextTarget(mjModel* m, mjData* d, int trgid)
+//{
+//    int grpid = mj_name2id(m, mjOBJ_SITE, "grip");
+//    bool next_target_exists = 0;
+//    double angle;
+//    double x_targ[2];
+//
+//    // next_targ has been incremented
+//   if (c.next_targ < c.ntargs) // feasible targets run 0,...,ntargs-1
+//    {
+//        angle = 360.0 * c.next_targ / c.ntargs;
+//        x_targ[0] = d->site_xpos[3 * grpid] + c.targ_dist * cos(angle / 180.0 * mjPI) - c.shoulder_pos[0];
+//        x_targ[1] = d->site_xpos[3 * grpid + 1] + c.targ_dist * sin(angle / 180.0 * mjPI) - c.shoulder_pos[1];
+//
+//        m->site_pos[3 * trgid] = x_targ[0] + c.shoulder_pos[0];
+//        m->site_pos[3 * trgid + 1] = x_targ[1] + c.shoulder_pos[1];
+//
+//        c.x_error_init[0] = m->site_pos[3 * trgid] - d->site_xpos[3 * grpid];
+//        c.x_error_init[1] = m->site_pos[3 * trgid + 1] - d->site_xpos[3 * grpid + 1];
+//        c.x_error_init[2] = 0.0;
+//
+//        next_target_exists = 1;
+//    }
+//
+//    c.reach_time = 1.712 * pow(c.targ_dist, 0.333); // coefficient = K^1/6 * 60^1/3, K=0.007
+//
+//    return next_target_exists;
+//}
+
+bool nextTarget(mjModel* m, const mjData* d, const double targ_xpos[2])
+{
+    int grpid = mj_name2id(m, mjOBJ_SITE, "grip");
+    int trgid = mj_name2id(m, mjOBJ_SITE, "target");
+    bool next_target_exists = 0;
+
+    if (c.next_targ < c.ntargs)
+    {
+        c.targ_xpos[0] = targ_xpos[0];
+        c.targ_xpos[1] = targ_xpos[1];
+        c.targ_xpos[2] = 0.0;
+
+        c.x_error_init[0] = c.targ_xpos[0] - d->site_xpos[3 * grpid];
+        c.x_error_init[1] = c.targ_xpos[1] - d->site_xpos[3 * grpid + 1];
+        c.x_error_init[2] = 0.0;
+
+        double targ_dist = sqrt(c.x_error_init[0] * c.x_error_init[0] + c.x_error_init[1] * c.x_error_init[1]);
+        c.reach_time = 1.712 * pow(targ_dist, 1.0 / 3.0);
+
+        next_target_exists = 1;
+
+        m->site_pos[3 * trgid] = c.targ_xpos[0];
+        m->site_pos[3 * trgid + 1] = c.targ_xpos[1];
+        //        printf("\ntarget distance %f, reach time %f", targ_dist, c.reach_time);
+    }
+    else
+        next_target_exists = 0;
 
     return next_target_exists;
 }
+
 
 void updateErrors(const mjModel* m, mjData* d)
 {

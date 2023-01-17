@@ -4,7 +4,7 @@
 
         README.md
 
-    Copyright 2021 Tiina Murtola/Royal Veterinary College
+    Copyright 2023 Tiina Murtola/Royal Veterinary College
 
 
     Parts of this code are modified from MuJoCo Resources, under the MuJoCo 
@@ -27,6 +27,11 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
+#include <vector>
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+#include <string>
 #include "mjcontrol.h"
 #include "reachingToolbox.h"
 
@@ -41,6 +46,7 @@ mjvScene scn;                       // abstract scene
 mjrContext con;                     // custom GPU context
 
 mjControl c;                        // control parameters and variables
+std::vector<std::pair<double, double>> targ_list; // target list
 
 // mouse interaction
 bool button_left = false;
@@ -112,9 +118,9 @@ void scroll(GLFWwindow* window, double xoffset, double yoffset)
 int main(int argc, const char** argv)
 {
     // check command-line arguments
-    if( argc<1 )
+    if( argc<3 )
     {
-        printf(" Specify modelfile by calling: simulate_reaches modelfile\n");
+        printf(" Specify modelfile by calling: simulate_reaches modelfile targetlist\n");
         return 0;
     }
 
@@ -146,14 +152,32 @@ int main(int argc, const char** argv)
     c.shoulder_pos[1] = m->body_pos[3 * chestid + 1];
     c.shoulder_pos[2] = m->body_pos[3 * chestid + 2];
 
-
     // -- set starting position & compute optimal muscle lengths
     setInitialPose(m, d, c.initPose);
     optimalLengthFromCurrent(m, d);
 
+    std::ifstream targetfile;
+
+    if (strlen(argv[2]) > 4 && !strcmp(argv[2] + strlen(argv[2]) - 4, ".txt"))
+    {
+        std::cout << "Opening " << argv[2] << " for input.\n";
+        targetfile.open(argv[2]);
+    }
+    else
+        mju_error("I can only deal with .txt input at the moment.");
+
+    if (!targetfile.is_open())
+    {
+        mju_error("Failed to open the target file.");
+    }
+
+    importTargets(targetfile, targ_list);
+    targetfile.close();
+
     // -- set up first target
     c.next_targ = 0;
-    bool cont2next = nextTarget(m, d, trgid);
+    double temp_targ_xpos[2] = { targ_list[c.next_targ].first, targ_list[c.next_targ].second };
+    bool cont2next = nextTarget(m, d, temp_targ_xpos);
 
     // -- initialise activation states (in userdata)
     mju_zero(d->userdata, m->nuserdata);
@@ -163,11 +187,13 @@ int main(int argc, const char** argv)
     mj_copyData(dpred, m, d);
 
     // -- set muscle dynamics callbacks
-    mjcb_control = muscleControlTargetPD;
+    //mjcb_control = muscleControlTargetPD;
+    mjcb_control = muscleControlTargetCompTorq;
     mjcb_act_gain = muscleGainFLV;
     //mjcb_act_gain = muscleGainConst;
     mjcb_act_dyn = muscleActivation3rdOrder;
     //mjcb_act_dyn = muscleActivation1stOrder;
+    mjcb_act_bias = muscleBias;
 
 
     // init GLFW
@@ -260,7 +286,9 @@ int main(int argc, const char** argv)
             {
                 mj_resetData(m, d);
                 setInitialPose(m, d, c.initPose);
-                cont2next = nextTarget(m, d, trgid);
+                temp_targ_xpos[0] = targ_list[c.next_targ].first;
+                temp_targ_xpos[1] = targ_list[c.next_targ].second;
+                cont2next = nextTarget(m, d, temp_targ_xpos);
             }
             else
                 cont2next = 0;
