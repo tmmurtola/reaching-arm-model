@@ -5,8 +5,8 @@ authors:
   given-names: "Murtola"
   orcid: "https://orcid.org/0000-0002-6641-2150"
 title: "A reaching arm model"
-version: 1.0.0
-date-released: 2022-06-27
+version: 2.0.0
+date-released: 2023-01-17
 url: "https://github.com/tmmurtola/reaching-arm-model"
 preferred-citation:
   type: article
@@ -16,7 +16,6 @@ preferred-citation:
     orcid: "https://orcid.org/0000-0002-6641-2150"
   - family-names: "Christopher"
     given-names: "Richards"
-  doi: "10.1080/10255842.2022.2089022"
-  journal: "Computer Methods in Biomechanics and Biomedical Engineering (in press)"
-  title: "The impact of intrinsic muscle properties on simulated reaching performance"
-  year: 2022
+  journal: "Royal Society Open Science (in press)"
+  title: "The impact of age-related increase in passive muscle stiffness on simulated reaching accuracy"
+  year: 2023
