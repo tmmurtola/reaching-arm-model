@@ -2,7 +2,7 @@
     REACHINGTOOLBOX.H defines auxiliary functions and custom 
     callbacks for SIMULATE_REACHES.CPP.
 
-    Copyright 2022 Tiina Murtola/Royal Veterinary College
+    Copyright 2023 Tiina Murtola/Royal Veterinary College
 
 ***************************************************************/
 
@@ -457,34 +457,6 @@ void importTargets(std::ifstream& targetfile, std::vector<std::pair<double, doub
     c.ntargs = numberOfLines;
 }
 
-//bool nextTarget(mjModel* m, mjData* d, int trgid)
-//{
-//    int grpid = mj_name2id(m, mjOBJ_SITE, "grip");
-//    bool next_target_exists = 0;
-//    double angle;
-//    double x_targ[2];
-//
-//    // next_targ has been incremented
-//   if (c.next_targ < c.ntargs) // feasible targets run 0,...,ntargs-1
-//    {
-//        angle = 360.0 * c.next_targ / c.ntargs;
-//        x_targ[0] = d->site_xpos[3 * grpid] + c.targ_dist * cos(angle / 180.0 * mjPI) - c.shoulder_pos[0];
-//        x_targ[1] = d->site_xpos[3 * grpid + 1] + c.targ_dist * sin(angle / 180.0 * mjPI) - c.shoulder_pos[1];
-//
-//        m->site_pos[3 * trgid] = x_targ[0] + c.shoulder_pos[0];
-//        m->site_pos[3 * trgid + 1] = x_targ[1] + c.shoulder_pos[1];
-//
-//        c.x_error_init[0] = m->site_pos[3 * trgid] - d->site_xpos[3 * grpid];
-//        c.x_error_init[1] = m->site_pos[3 * trgid + 1] - d->site_xpos[3 * grpid + 1];
-//        c.x_error_init[2] = 0.0;
-//
-//        next_target_exists = 1;
-//    }
-//
-//    c.reach_time = 1.712 * pow(c.targ_dist, 0.333); // coefficient = K^1/6 * 60^1/3, K=0.007
-//
-//    return next_target_exists;
-//}
 
 bool nextTarget(mjModel* m, const mjData* d, const double targ_xpos[2])
 {
