@@ -12,7 +12,7 @@ The contents of this package:
 
 * simulate_reaches_rate.cpp  - source code for the model for generating full set of simulation data
 * mjx_parallel_pop.cpp       - C++ source code that can be compiled to a mex-file for MATLAB
-* model_maker                - Python script for generating MuJoCo models with multi-MU muscles
+* model_maker.py                - Python script for generating MuJoCo models with multi-MU muscles
 * human_arm_1MU_template.xml - xml model file that is used by model_maker to generate multi-MU models
 * inc/                       - folder containing header files
 * scripts/                   - folder containing MATLAB scripts for parameter optimisation, simulating workspace errors, and plotting results
@@ -41,7 +41,7 @@ The mex implementation is a minimal version of the C++ model, which only outputs
 
 To regenarete full set of results
 ========
-1. Use model_maker to generate model files for the selected number of MUs and maximum firing rate.
+1. Use model_maker.py to generate model files for the selected number of MUs and maximum firing rate.
 2. Compile mex file in MATLAB if necessary.
 3. Run optimise_control_params.mlx to obtain control parameters for the model.
 4. Run simulate_workspace_errors.mlx to calculate homing-in errors for targets covering the entire workspace.
