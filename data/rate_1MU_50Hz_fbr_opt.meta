@@ -1,0 +1,19 @@
+This is the metadata file for simulation output .txt file with the corresponding name.
+Time of metadata generation: Fri Jul 18 14:24:19 2025
+
+  
+ FIELDS: columns 
++++++
+d->time: 1
+d->qpos: 3
+d->qvel: 3
+targ_xpos: 2
+grip_xpos: 2
+d->ctrl: 6
+c.PDmagn: 3
+c.computed_torque: 3
+d->actuator_force: 6
+d->act: 6
+-----
+ Total number of columns: 35
+ Column separator: ;\t
