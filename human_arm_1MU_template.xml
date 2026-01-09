@@ -1,0 +1,117 @@
+<mujoco model="human_arm_3dof">
+  <compiler>
+    <lengthrange mode="muscleuser"/>
+  </compiler>
+  <option timestep=".0005"/>
+  <size nuserdata="30" nuser_actuator="6"/>
+  <custom>
+	<numeric  name="mupool" data="1"/>
+  </custom>
+  <visual>
+    <rgba haze="0.3 0.3 0.3 1"/>
+  </visual>
+  <default>
+
+      <joint type="hinge" pos="0 0 0" axis="0 0 1"/>
+      <general dyntype="user" gaintype="user" biastype="user" ctrllimited="true" ctrlrange="0 1" dynprm="0.025 0.7 0.04 0.8 0.018 0.6"/>
+
+  </default>
+  <asset>
+    <texture name="skybox" type="skybox" builtin="gradient" rgb1="0.6 0.6 0.6" rgb2="0 0 0" width="512" height="512"/>
+    <texture name="texplane" type="2d" builtin="checker" rgb1="0.25 0.25 0.25" rgb2="0.3 0.3 0.3" mark="cross" markrgb="0.8 0.8 0.8" width="512" height="512"/>
+    <material name="matplane" texture="texplane" texrepeat="1 1" texuniform="true"/>
+  </asset>
+  <worldbody>
+    <geom name="floor" type="plane" size="0 0 1" material="matplane" pos="0 0 -0.5"/>
+    <light name="unnamed_light"  directional="true" pos="0 0 5" dir="0 0 -1" diffuse="0.8 0.8 0.8" specular="0.2 0.2 0.2"/>
+    <site name="target"  rgba="0 0 0.7 1" size="0.02" pos="0.2 0.72 0"/>
+    <body name="upper chest" pos="0 0 0">
+      <geom name="chest_link"  type="capsule" size="0.045" rgba="0.5 0.1 0.1 0.5" fromto="-0.44 0 0 0 0 0"/>
+      <site name="a0"  rgba="0.4 0.6 0.4 1" size="0.01" pos="-0.22 0.035 0"/>
+      <site name="a1"  rgba="0.4 0.6 0.4 1" size="0.01" pos="-0.22 -0.035 0"/>
+      <site name="a2"  rgba="0.4 0.6 0.4 1" size="0.01" pos="-0.06 0.035 0"/>
+      <site name="a3"  rgba="0.4 0.6 0.4 1" size="0.01" pos="-0.06 -0.035 0"/>
+      <body name="upper arm" pos="0 0 0">
+        <geom name="upperarm_link"  type="capsule" size="0.041" rgba="0.5 0.1 0.1 0.5" fromto="0 0 0 0.32 0 0"/>
+        <joint name="shoulder"  group="0" limited="true" range="-20 120" frictionloss="0.4"/>
+        <geom name="shoulder_wrap" type="cylinder" group="0" size="0.045 0.05" rgba="0.5 0.1 0.1 0.5" mass="0" pos="0 0 0"/>
+        <site name="b0"  rgba="0.4 0.4 0.6 1" size="0.01" pos="0 0.035 0"/>
+        <site name="b1"  rgba="0.4 0.4 0.6 1" size="0.01" pos="0 -0.035 0"/>
+        <site name="a4"  rgba="0.4 0.6 0.4 1" size="0.01" pos="0.06 0.031 0"/>
+        <site name="a5"  rgba="0.4 0.6 0.4 1" size="0.01" pos="0.06 -0.031 0"/>
+        <site name="b2"  rgba="0.4 0.6 0.6 1" size="0.01" pos="0.26 0.031 0"/>
+        <site name="b3"  rgba="0.4 0.6 0.6 1" size="0.01" pos="0.26 -0.031 0"/>
+        <site name="x0"  rgba="0 0.7 0 0.2" size="0.01" pos="0 0.11 0"/>
+        <site name="x1" rgba="0 0.7 0 0.2" size="0.01" pos="0 -0.11 0"/>
+        <body name="forearm" pos="0.32 0 0">
+          <geom name="forearm_link" type="capsule" size="0.035" rgba="0.5 0.1 0.1 0.5" density="1000" fromto="0 0 0 0.25 0 0"/>
+          <joint name="elbow"  group="1" limited="true" range="5 120" frictionloss="0.4"/>
+          <geom name="elbow_wrap"  type="cylinder" group="1" size="0.041 0.04" rgba="0.5 0.1 0.1 0.5" mass="0" pos="0 0 0"/>
+          <site name="c0"  rgba="0.6 0.4 0.4 1" size="0.01" pos="0 0.03 0"/>
+          <site name="c1"  rgba="0.6 0.4 0.4 1" size="0.01" pos="0 -0.03 0"/>
+          <site name="b4"  rgba="0.4 0.4 0.6 1" size="0.01" pos="0.06 0.025 0"/>
+          <site name="b5"  rgba="0.4 0.4 0.6 1" size="0.01" pos="0.06 -0.025 0"/>
+          <site name="c2"  rgba="0.6 0.4 0.4 1" size="0.01" pos="0.21 0.025 0"/>
+          <site name="c3"  rgba="0.6 0.4 0.4 1" size="0.01" pos="0.21 -0.025 0"/>
+          <site name="x3"  rgba="0 0.7 0 0.2" size="0.01" pos="0 -0.08 0"/>
+          <body name="hand" pos="0.25 0 0">
+            <geom name="hand_link" type="capsule" size="0.0252" rgba="0.5 0.1 0.1 0.5" density="1000" fromto="0 0 0 0.18 0 0"/>
+            <joint name="wrist" group="2" limited="true" range="-10 70" frictionloss="0.4"/>
+            <geom name="wrist_wrap"  type="cylinder" group="2" size="0.035 0.03" rgba="0.5 0.1 0.1 0.5" mass="0" pos="0 0 0"/>
+            <site name="c4"  rgba="0.6 0.4 0.4 1" size="0.01" pos="0.05 0.0152 0"/>
+            <site name="c5" rgba="0.6 0.4 0.4 1" size="0.01" pos="0.05 -0.0152 0"/>
+            <site name="x4"  rgba="0 0.7 0 0.2" size="0.01" pos="0 0.05 0"/>
+            <site name="x5"  rgba="0 0.7 0 0.2" size="0.01" pos="0 -0.05 0"/>
+            <site name="grip"  rgba="0.5 0.5 0.5 0.5" size="0.02" pos="0.2 0 0"/>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  <tendon>
+    <spatial name="AF"  width="0.009" rgba="0.4 0.6 0.4 1">
+      <site site="a0"/>
+      <site site="a2"/>
+      <geom geom="shoulder_wrap" sidesite="x0"/>
+      <site site="a4"/>
+    </spatial>
+    <spatial name="AE" width="0.009" rgba="0.4 0.6 0.4 1">
+      <site site="a1"/>
+      <site site="a3"/>
+      <geom geom="shoulder_wrap" sidesite="x1"/>
+      <site site="a5"/>
+    </spatial>
+    <spatial name="BF"  width="0.009" rgba="0.4 0.4 0.6 1">
+      <site site="b0"/>
+      <site site="b2"/>
+      <geom geom="elbow_wrap"/>
+      <site site="b4"/>
+    </spatial>
+    <spatial name="BE"  width="0.009" rgba="0.4 0.4 0.6 1">
+      <site site="b1"/>
+      <site site="b3"/>
+      <geom geom="elbow_wrap" sidesite="x3"/>
+      <site site="b5"/>
+    </spatial>
+    <spatial name="CF"  width="0.009" rgba="0.6 0.4 0.4 1">
+      <site site="c0"/>
+      <site site="c2"/>
+      <geom geom="wrist_wrap" sidesite="x4"/>
+      <site site="c4"/>
+    </spatial>
+    <spatial name="CE"  width="0.009" rgba="0.6 0.4 0.4 1">
+      <site site="c1"/>
+      <site site="c3"/>
+      <geom geom="wrist_wrap" sidesite="x5"/>
+      <site site="c5"/>
+    </spatial>
+  </tendon>
+  <actuator>
+    <general name="flx_shoulder"  group="0"  tendon="AF" user="1 0 100 0.01 0.24 1" gainprm="-1500 1.5 -1.1 -0.53 4 1.8 7.56 1.6 0 0" biasprm="-75 5 1.1"/>
+    <general name="ext_shoulder"  group="1"  tendon="AE" user="1 0 100 0.01 0.24 1" gainprm="-1500 1.5 -1.1 -0.53 4 1.8 7.56 1.6 0 0" biasprm="-75 5 1.1"/>
+    <general name="flx_elbow" group="2"  tendon="BF" user="1 0 100 0.01 0.24 1" gainprm="-1000 1.5 -1.1 -0.53 4 1.8 7.56 1.6 0 0" biasprm="-65 5 1.1"/>
+    <general name="ext_elbow"  group="3"  tendon="BE" user="1 0 100 0.01 0.24 1" gainprm="-1000 1.5 -1.1 -0.53 4 1.8 7.56 1.6 0 0" biasprm="-50 5 1.1"/>
+    <general name="flx_wrist"  group="4"  tendon="CF" user="1 0 100 0.01 0.24 1" gainprm="-500 1.5 -1.1 -0.53 4 1.8 7.56 1.6 0 0" biasprm="-25 5 1.1"/>
+    <general name="ext_wrist"  group="5"  tendon="CE" user="1 0 100 0.01 0.24 1" gainprm="-500 1.5 -1.1 -0.53 4 1.8 7.56 1.6 0 0" biasprm="-15 5 1.1"/>
+  </actuator>
+</mujoco>
