@@ -47,5 +47,6 @@ To regenarete full set of results
 4. Run simulate_workspace_errors.mlx to calculate homing-in errors for targets covering the entire workspace.
 5. Compile simulate_reaches_rate.cpp if necessary.
 6. Run simulate_reaches_rate to generate full time signals for reaching simulations with model.
+7. Run results_figures.mlx to analyse and plot results.
 
 
