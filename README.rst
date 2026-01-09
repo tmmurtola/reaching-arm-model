@@ -27,7 +27,7 @@ The main file simulate_reaches_rate.cpp needs to be compiled with the alglib fil
 
 To compile the mex file in MATLAB:
 
-  mex COMPFLAGS="$COMPFLAGS /openmp" -output mjx_simulate_reaches_rate -DWIN32 -D_WIN32 -I..\inc\ mjx_parallel_pop.cpp alglibinternal.cpp alglibmisc.cpp ap.cpp linalg.cpp -lmujoco200.lib -lglfw3.lib
+  mex COMPFLAGS="$COMPFLAGS /openmp" -output mjx_simulate_reaches_rate -DWIN32 -D_WIN32 -I..\inc\  mjx_parallel_pop.cpp alglibinternal.cpp alglibmisc.cpp ap.cpp linalg.cpp -lmujoco200.lib -lglfw3.lib
 
 
 To run simulations
