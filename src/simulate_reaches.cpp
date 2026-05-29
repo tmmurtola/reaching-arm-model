@@ -112,14 +112,33 @@ void scroll(GLFWwindow* window, double xoffset, double yoffset)
 int main(int argc, const char** argv)
 {
     // check command-line arguments
-    if( argc<1 )
+    if( argc < 2 )
     {
-        printf(" Specify modelfile by calling: simulate_reaches modelfile\n");
+        printf("Usage: simulate_reaches <modelfile> [OPTIONS]\n");
+        printf("Options:\n");
+        printf("  --no-render    Run simulation without rendering (headless mode)\n");
+        printf("  --help         Display this help message\n");
         return 0;
     }
 
+    // parse options
+    bool enable_rendering = true;
+    for( int i = 2; i < argc; i++ )
+    {
+        if( strcmp(argv[i], "--no-render") == 0 )
+            enable_rendering = false;
+        else if( strcmp(argv[i], "--help") == 0 )
+        {
+            printf("Usage: simulate_reaches <modelfile> [OPTIONS]\n");
+            printf("Options:\n");
+            printf("  --no-render    Run simulation without rendering (headless mode)\n");
+            printf("  --help         Display this help message\n");
+            return 0;
+        }
+    }
+
     // activate software
-    mj_activate("mjkey.txt");
+    //mj_activate("mjkey.txt");
 
     // load and compile model
     char error[1000] = "Could not load binary model";
@@ -169,39 +188,45 @@ int main(int argc, const char** argv)
     mjcb_act_dyn = muscleActivation3rdOrder;
     //mjcb_act_dyn = muscleActivation1stOrder;
 
-
-    // init GLFW
-    if( !glfwInit() )
-        mju_error("Could not initialize GLFW");
-
-    // create window, make OpenGL context current, request v-sync
-    GLFWwindow* window = glfwCreateWindow(1200, 900, "Demo", NULL, NULL);
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);
-
-    // initialize visualization data structures
-    mjv_defaultCamera(&cam);
-    mjv_defaultOption(&opt);
-    mjv_defaultScene(&scn);
-    mjr_defaultContext(&con);
-
-    // create scene and context
-    mjv_makeScene(m, &scn, 2000);
-    mjr_makeContext(m, &con, mjFONTSCALE_150);
-
-    // install GLFW mouse and keyboard callbacks
-    glfwSetCursorPosCallback(window, mouse_move);
-    glfwSetMouseButtonCallback(window, mouse_button);
-    glfwSetScrollCallback(window, scroll);
-
-
-    // run main loop, target real-time simulation and 60 fps rendering
-    while(!glfwWindowShouldClose(window))
+    // init GLFW and rendering only if rendering is enabled
+    GLFWwindow* window = NULL;
+    if( enable_rendering )
     {
-        if (d->time < c.sim_duration && c.next_targ < c.ntargs)
+        if( !glfwInit() )
+            mju_error("Could not initialize GLFW");
+
+        // create window, make OpenGL context current, request v-sync
+        window = glfwCreateWindow(1200, 900, "Demo", NULL, NULL);
+        glfwMakeContextCurrent(window);
+        glfwSwapInterval(1);
+
+        // initialize visualization data structures
+        mjv_defaultCamera(&cam);
+        mjv_defaultOption(&opt);
+        mjv_defaultScene(&scn);
+        mjr_defaultContext(&con);
+
+        // create scene and context
+        mjv_makeScene(m, &scn, 2000);
+        mjr_makeContext(m, &con, mjFONTSCALE_150);
+
+        // install GLFW mouse and keyboard callbacks
+        glfwSetCursorPosCallback(window, mouse_move);
+        glfwSetMouseButtonCallback(window, mouse_button);
+        glfwSetScrollCallback(window, scroll);
+    }
+
+
+    // loop through targets
+    // TODO: add option for user to close window and continue headless simulation, or to exit simulation entirely
+    while ( c.next_targ < c.ntargs )
+    {
+        // run main simulation loop
+        while ( d->time < c.sim_duration )
         {
+            // split the loop to enable rendering at 60 fps
             mjtNum simstart = d->time;
-            while (d->time - simstart < 1.0 / 60.0)
+            while ( d->time - simstart < 1.0 / 60.0 && d->time < c.sim_duration )
             {
                 if ((int)c.delay > 0)
                 {
@@ -242,8 +267,25 @@ int main(int argc, const char** argv)
                 mju_copy(dpred->qacc_warmstart, d->qacc_warmstart, m->nv);
                 
             }
+                if( enable_rendering )
+                {
+                    // get framebuffer viewport
+                    mjrRect viewport = { 0, 0, 0, 0 };
+                    glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
+
+                    // update scene and render
+                    mjv_updateScene(m, d, &opt, NULL, &cam, mjCAT_ALL, &scn);
+                    mjr_render(viewport, &scn, &con);
+
+                    // swap OpenGL buffers (blocking call due to v-sync)
+                    glfwSwapBuffers(window);
+
+                    // process pending GUI events, call GLFW callbacks
+                    glfwPollEvents();
+                }
         }
-        else if (cont2next)
+
+        if (cont2next)
         {
             int Nsteps = (int)(d->time / m->opt.timestep) + 1;
             int Nsucc;
@@ -282,29 +324,17 @@ int main(int argc, const char** argv)
             else
             {
                 c.error_norm = 0.0;
-                printf("\n No more targets.");
+                printf("\n No more targets. \n");
             }
         }
-
-        // get framebuffer viewport
-        mjrRect viewport = { 0, 0, 0, 0 };
-        glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
-
-        // update scene and render
-        mjv_updateScene(m, d, &opt, NULL, &cam, mjCAT_ALL, &scn);
-        mjr_render(viewport, &scn, &con);
-
-        // swap OpenGL buffers (blocking call due to v-sync)
-        glfwSwapBuffers(window);
-
-        // process pending GUI events, call GLFW callbacks
-        glfwPollEvents();
-
     }
 
     // free visualization storage
-    mjv_freeScene(&scn);
-    mjr_freeContext(&con);
+    if( enable_rendering )
+    {
+        mjv_freeScene(&scn);
+        mjr_freeContext(&con);
+    }
 
     // free data, deactivate
     c.del();
